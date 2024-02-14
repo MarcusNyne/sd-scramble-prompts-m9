@@ -1,0 +1,7 @@
+beautiful woman:1.52,<lora:Chloe Lolita:0.946>,beautiful woman:1.4,octane render:0.6,asian:0.661,breasts:1.36
+sakamata chloe:1.42,fantastical:0.573,concept art:0.619,ashes to ashes:0.782,sharp focus:1.39,Black ink flow:0.554
+thick broad brush strokes:0.98,dark ink:1.06,complex:0.774,intricately detailed:0.569,photorealistic masterpiece:1.48
+professional photography:1.44,hyper detailed.:1.27,intricately detailed fluid gouache painting:1.08,waves:0.762
+natural lighting:1.02,<lora:more_details:1.2>,grey hair:1.3,epic lighting digital painting:0.844,8k resolution:0.602
+maximalist:0.524,smoke:0.812,volumetric lighting:0.531,dark presence:1.65,8 k:0.665,elegant:0.989,expansive:0.553
+red eyes:0.698,cover:1.04,flowing water:1.43,8k resolution:1.5
