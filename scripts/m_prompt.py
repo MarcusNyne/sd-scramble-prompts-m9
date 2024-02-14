@@ -123,7 +123,7 @@ class mPrompt:
                 return True
         return False
 
-    def __modify_weight(self, inWeight:float, inRange:float, inMinInput:float|None=None, inMaxInput:float|None=None, inMinOutput:float|None=None, inMaxOutput:float|None=None):
+    def __modify_weight(self, inWeight:float, inRange:float, inMinInput:float=None, inMaxInput:float=None, inMinOutput:float=None, inMaxOutput:float=None):
         if (inMinInput is not None and inWeight<inMinInput) or (inMaxInput is not None and inWeight>inMaxInput):
             return inWeight
 

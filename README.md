@@ -4,6 +4,8 @@ A custom extension for [AUTOMATIC1111/stable-diffusion-webui](https://github.com
 
 This extension scrambles a positive prompt to create variations of the prompt.  The intended purpose is to help create random variations to find a better version of an existing prompt.
 
+*Not intended to be used while Tweak Weights [m9] is in use*
+
 ## Overview
 
 Modifications to the prompt may include:
