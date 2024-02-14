@@ -2,6 +2,7 @@ import os
 import copy
 from datetime import datetime
 
+from modules.processing import fix_seed
 import modules.scripts as scripts
 import gradio as gr
 
@@ -13,10 +14,11 @@ from scripts.m_prompt import *
 
 class Script(scripts.Script):
     def __init__(self):
+        self.__inside = False
         pass
 
     def title(self):
-        return "Scramble Prompts [M9]"
+        return "Scramble Prompts [M9]v1"
 
     def show(self, is_img2img):
         return scripts.AlwaysVisible
@@ -62,54 +64,98 @@ class Script(scripts.Script):
     def process(self, p, is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
                     weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown):
 
-        if is_enabled is False:
-            return p
+        if not self.__inside and is_enabled:
 
-        p.do_not_save_grid = True
-        state.job_count = cnt_variations
+            if self._cnt_variations>1:
 
-        images = []
-        all_prompts = []
-        infotexts = []
+                self.__inside = True
 
-        original_seed = p.seed
-        original_prompt = p.prompt
-        original_outpath = p.outpath_samples
-        outpath_root = datetime.now().strftime("%y%m%d-%H%M")
-        cnt_variations = int(cnt_variations)
-        for var_ix in range (cnt_variations):
-            print(f"Variation {var_ix+1} of {cnt_variations}.\n")
+                try:
+                    for var_ix in range (self._cnt_variations-1):
+                        self.__print_variation_header(var_ix)
 
-            p.seed = original_seed
-            test_prompt = mPrompt(inSeed=None, inPrompt=original_prompt)
-            test_prompt.ScrambleOrder(inLimit=self.__if_zint(order_limit), inVariance=self.__if_zint(order_variance))
-            weight_range=self.__if_zero(weight_range)
-            if weight_range is not None:
-                test_prompt.ScrambleWeights(weight_range, inIsLora=False, inLimit=self.__if_zint(weight_limit), inVariance=self.__if_zint(weight_variance), inMinOutput=0, inMaxOutput=self.__if_zero(weight_max))
-            lora_weight_range=self.__if_zero(lora_weight_range)
-            if lora_weight_range is not None:
-                test_prompt.ScrambleWeights(lora_weight_range, inIsLora=True)
-            reduction_limit = self.__if_zint(reduction_limit) 
-            if reduction_limit is not None:
-                test_prompt.ScrambleReduction(inTarget=self.__if_zint(reduction_limit), inRange=self.__if_zint(reduction_variance), inKeepTokens=keep_tokens)
-            new_prompt = test_prompt.Generate()
+                        p.seed = self._original_seed
 
-            copy_p = copy.copy(p)
-            copy_p.prompt = new_prompt
-            if chk_variation_folders is True:
-                copy_p.outpath_samples = os.path.join (original_outpath, f"{outpath_root}-{var_ix+1:02d}")   
-            proc = process_images(copy_p)
+                        new_prompt = self.__generate_prompt(order_limit, order_variance, reduction_limit, reduction_variance, keep_tokens, \
+                            weight_range, weight_max, weight_limit, weight_variance, lora_weight_range)
 
-            if original_seed==-1 and len(proc.all_seeds)>0:
-                original_seed = proc.all_seeds[0]
+                        copy_p = copy.copy(p)
+                        copy_p.prompt = new_prompt
+                        if chk_variation_folders is True:
+                            copy_p.outpath_samples = self.__calc_outpath(var_ix)
+                        processed = process_images(copy_p)
 
-            images += proc.images
-            all_prompts += proc.all_prompts
-            infotexts += proc.infotexts
+                        self._processed_images += processed.images
+                        self._processed_all_prompts += processed.all_prompts
+                        self._processed_infotexts += processed.infotexts
 
-        return Processed(p, images, p.seed, "", all_prompts=all_prompts, infotexts=infotexts)
+                except:
+                    pass
+
+            self.__inside = False
+            self.__print_variation_header(self._cnt_variations-1)
 
     def __if_zero(self, inValue):
         return None if (inValue is None or inValue==0.0) else inValue
     def __if_zint(self, inValue):
         return None if (inValue is None or inValue==0.0) else int(inValue)
+
+    def __print_variation_header(self, in_iteration):
+        print(f"Variation {in_iteration+1} of {self._cnt_variations} [{self._outpath_root}].\n")
+
+    def __calc_outpath(self, in_iteration):
+        return os.path.join (self._original_outpath, f"{self._outpath_root}-{in_iteration+1:02d}")
+
+    def __generate_prompt(self, order_limit, order_variance, reduction_limit, reduction_variance, keep_tokens, \
+                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range):
+        prompt = mPrompt(inSeed=None, inPrompt=self._original_prompt)
+        prompt.ScrambleOrder(inLimit=self.__if_zint(order_limit), inVariance=self.__if_zint(order_variance))
+        weight_range=self.__if_zero(weight_range)
+        if weight_range is not None:
+            prompt.ScrambleWeights(weight_range, inIsLora=False, inLimit=self.__if_zint(weight_limit), inVariance=self.__if_zint(weight_variance), inMinOutput=0, inMaxOutput=self.__if_zero(weight_max))
+        lora_weight_range=self.__if_zero(lora_weight_range)
+        if lora_weight_range is not None:
+            prompt.ScrambleWeights(lora_weight_range, inIsLora=True)
+        reduction_limit = self.__if_zint(reduction_limit) 
+        if reduction_limit is not None:
+            prompt.ScrambleReduction(inTarget=self.__if_zint(reduction_limit), inRange=self.__if_zint(reduction_variance), inKeepTokens=keep_tokens)
+        new_prompt = prompt.Generate()
+        return new_prompt
+
+    def before_process(self, p, is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
+                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown):
+
+        if self.__inside or not is_enabled:
+            return
+
+        fix_seed(p)
+        p.do_not_save_grid = True
+        self._cnt_variations = int(cnt_variations)
+        self._outpath_root = datetime.now().strftime("%y%m%d-%H%M")
+        self._original_seed = p.seed
+        self._original_prompt = p.prompt
+        self._original_outpath = p.outpath_samples
+        self._processed_images = []
+        self._processed_all_prompts = []
+        self._processed_infotexts = []
+        state.job_count = self._cnt_variations * p.n_iter * p.batch_size
+
+        if chk_variation_folders is True:
+            p.outpath_samples = self.__calc_outpath(self._cnt_variations-1)
+        p.prompt = self.__generate_prompt(order_limit, order_variance, reduction_limit, reduction_variance, keep_tokens, \
+            weight_range, weight_max, weight_limit, weight_variance, lora_weight_range)
+
+
+    def postprocess(self, p, processed, is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
+                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown):
+
+        if self.__inside or not is_enabled:
+            return
+
+        self._processed_images += processed.images
+        self._processed_all_prompts += processed.all_prompts
+        self._processed_infotexts += processed.infotexts
+
+        processed.images = self._processed_images
+        processed._processed_all_prompts = self._processed_all_prompts
+        processed._processed_infotexts = self._processed_infotexts
