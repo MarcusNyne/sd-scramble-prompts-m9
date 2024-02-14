@@ -18,7 +18,7 @@ class Script(scripts.Script):
         pass
 
     def title(self):
-        return "Scramble Prompts [M9]v1"
+        return "Scramble Prompts [M9]"
 
     def show(self, is_img2img):
         return scripts.AlwaysVisible
@@ -28,7 +28,7 @@ class Script(scripts.Script):
             with gr.Accordion("Scramble Prompts [M9]", open=False):
                 is_enabled = gr.Checkbox(
                     label="Scramble Prompts enabled",
-                    value=True,
+                    value=False,
                     interactive=True,
                     elem_id="m9-dynamic-prompts-enabled",
                 )
@@ -81,6 +81,8 @@ class Script(scripts.Script):
 
                         copy_p = copy.copy(p)
                         copy_p.prompt = new_prompt
+                        if p.prompt==p.hr_prompt:
+                            copy_p.hr_prompt = ''
                         if chk_variation_folders is True:
                             copy_p.outpath_samples = self.__calc_outpath(var_ix)
                         processed = process_images(copy_p)
@@ -144,7 +146,7 @@ class Script(scripts.Script):
             p.outpath_samples = self.__calc_outpath(self._cnt_variations-1)
         p.prompt = self.__generate_prompt(order_limit, order_variance, reduction_limit, reduction_variance, keep_tokens, \
             weight_range, weight_max, weight_limit, weight_variance, lora_weight_range)
-
+        pass
 
     def postprocess(self, p, processed, is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
                     weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown):
