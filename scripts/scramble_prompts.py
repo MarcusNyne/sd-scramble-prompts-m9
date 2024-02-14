@@ -9,7 +9,7 @@ from modules import images
 from modules.processing import Processed, process_images
 from modules.shared import state
 
-from code.m_prompt import *
+from scripts.m_prompt import *
 
 class Script(scripts.Script):
     def __init__(self):

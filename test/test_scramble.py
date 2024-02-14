@@ -1,5 +1,5 @@
 import sys
-sys.path.append('code')
+sys.path.append('scripts')
 from m_prompt import *
 
 test_prompt = mPrompt()
