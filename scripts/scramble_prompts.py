@@ -59,11 +59,11 @@ class Script(scripts.Script):
         return [is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
                     weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown]
 
-    def run(self, p, is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
+    def process(self, p, is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
                     weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown):
 
         if is_enabled is False:
-            return process_images(p)
+            return p
 
         p.do_not_save_grid = True
         state.job_count = cnt_variations
