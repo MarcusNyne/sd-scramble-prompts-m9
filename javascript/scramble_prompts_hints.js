@@ -12,6 +12,5 @@ titles = {
   "Weight Variance (+/-)": "Modifies the Weight Count",
   "Lora Weight Range (+/-)": "Range for applying a weight change to Loras.  All Loras will be modified",
   "Variations (count)": "The number of prompt variations to produce.  The entire (count*batch) is run against a variation",
-  "Variations (count)": "The number of prompt variations to produce.  The entire (count*batch) is run against a variation",
   "Create variation folders": "Creates a folder for all images in a variation"
 };
