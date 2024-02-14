@@ -30,7 +30,7 @@ class Script(scripts.Script):
                     label="Scramble Prompts enabled",
                     value=False,
                     interactive=True,
-                    elem_id="m9-dynamic-prompts-enabled",
+                    elem_id="m9-scramble-prompts-enabled",
                 )
 
                 with gr.Group(visible=True):
