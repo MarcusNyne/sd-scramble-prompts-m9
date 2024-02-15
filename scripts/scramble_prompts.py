@@ -140,7 +140,7 @@ class Script(scripts.Script):
         self._processed_images = []
         self._processed_all_prompts = []
         self._processed_infotexts = []
-        state.job_count = self._cnt_variations * p.n_iter * p.batch_size
+        state.job_count = self._cnt_variations * p.n_iter
 
         if chk_variation_folders is True:
             p.outpath_samples = self.__calc_outpath(self._cnt_variations-1)
