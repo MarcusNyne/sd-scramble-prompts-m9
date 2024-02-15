@@ -30,7 +30,7 @@ class Script(scripts.Script):
                     label="Scramble Prompts enabled",
                     value=False,
                     interactive=True,
-                    elem_id="m9-dynamic-prompts-enabled",
+                    elem_id="m9-scramble-prompts-enabled",
                 )
 
                 with gr.Group(visible=True):
@@ -39,24 +39,24 @@ class Script(scripts.Script):
                             with gr.Row():
                                 markdown = gr.Markdown("Scrambles a prompt by changing token order, removing tokens, and changing token weights.  The entire count/batch will be run against a prompt variation before running the next one.")
                             with gr.Row():
-                                order_limit = gr.Number(label="Order Tokens (0=all)", infox="Causes tokens to be reordered", value=0, minimum=0, elem_id=self.elem_id("order_limit"))
-                                order_variance = gr.Number(label="Order Variance (+/-)", infox="Modify count, when order tokens is not 0", value=None, minimum=0, elem_id=self.elem_id("order_variance"))
+                                order_limit = gr.Number(label="Order Tokens (0=all)", value=0, minimum=0, elem_id=self.elem_id("order_limit"))
+                                order_variance = gr.Number(label="Order Variance (+/-)", value=None, minimum=0, elem_id=self.elem_id("order_variance"))
                             with gr.Row():
-                                reduction_limit = gr.Number(label="Reduce Tokens (0=none)", infox="Causes tokens to be eliminated", value=0, minimum=0, elem_id=self.elem_id("reduction_limit"))
-                                reduction_variance = gr.Number(label="Reduce Variance (+/-)", infox="Modify count in the range -N to +N", value=None, minimum=0, elem_id=self.elem_id("reduction_variance"))
+                                reduction_limit = gr.Number(label="Reduce Tokens (0=none)", value=0, minimum=0, elem_id=self.elem_id("reduction_limit"))
+                                reduction_variance = gr.Number(label="Reduce Variance (+/-)", value=None, minimum=0, elem_id=self.elem_id("reduction_variance"))
                             with gr.Row():
-                                keep_tokens = gr.Textbox(label="Keep Tokens (,)", infox="Tokens with these keywords in them will not be reduced", lines=1, elem_id=self.elem_id("keep_tokens"))
+                                keep_tokens = gr.Textbox(label="Keep Tokens (,)", lines=1, elem_id=self.elem_id("keep_tokens"))
                             with gr.Row():
                                 weight_range = gr.Number(label="Weight Range (+/-)", value=0.5, step=0.1, minimum=0, elem_id=self.elem_id("weight_range"))
                                 weight_max = gr.Number(label="Max Weight", value=1.9, step=0.1, minimum=0, elem_id=self.elem_id("weight_max"))
                             with gr.Row():
                                 weight_limit = gr.Number(label="Weight Count", value=20, step=1, minimum=0, elem_id=self.elem_id("weight_limit"))
-                                weight_variance = gr.Number(label="Weight Variance (+/-)", infox="Modify count, when weight token count", value=None, minimum=0, elem_id=self.elem_id("weight_variance"))
+                                weight_variance = gr.Number(label="Weight Variance (+/-)", value=None, minimum=0, elem_id=self.elem_id("weight_variance"))
                                 lora_weight_range = gr.Number(label="Lora Weight Range (+/-)", value=0.2, minimum=0, step=0.1, elem_id=self.elem_id("lora_weight_range"))
                             with gr.Row():
                                 cnt_variations = gr.Slider(label="Variations (count)", info="Number of variations to produce.  (count*batch) images are produced for each variation.", minimum=1, maximum=100, value=1, step=1, elem_id=self.elem_id("cnt_variations"))
                             with gr.Row():
-                                chk_variation_folders = gr.Checkbox(label="Create variation folders", infox="Causes an image subfolder to be created for a variation", value=False, elem_id=self.elem_id("chk_variation_folders"))
+                                chk_variation_folders = gr.Checkbox(label="Create variation folders", value=False, elem_id=self.elem_id("chk_variation_folders"))
 
         return [is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
                     weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown]
@@ -159,5 +159,5 @@ class Script(scripts.Script):
         self._processed_infotexts += processed.infotexts
 
         processed.images = self._processed_images
-        processed._processed_all_prompts = self._processed_all_prompts
-        processed._processed_infotexts = self._processed_infotexts
+        processed.all_prompts = self._processed_all_prompts
+        processed.infotexts = self._processed_infotexts

@@ -97,25 +97,43 @@ class mPrompt:
                 inLimit = max(inLimit, 0)
 
             pmap = pmap[:inLimit]
+
         for p in pmap:
-            weight = 1
-            if 'weight' in self.p_prompts[p]:
-                weight = self.p_prompts[p]['weight']
-            skip = False
-            if inMinInput is not None and weight<inMinInput:
-                skip = True
-            if inMaxInput is not None and weight>inMaxInput:
-                skip = True
-            if skip is False:
-                random.seed(self.seed)
-                mod = (random.random() * inRange * 2)-inRange
-                org_weight = weight
-                weight = weight + mod
-                if inMinOutput is not None and weight < inMinOutput:
-                    weight = org_weight
-                if inMaxOutput is not None and weight > inMaxOutput:
-                        weight = org_weight
-                self.p_prompts[p]['weight'] = weight
+            weight = self.p_prompts[p]['weight'] if 'weight' in self.p_prompts[p] else 1
+            self.p_prompts[p]['weight'] = self.__modify_weight(weight, inRange, inMinInput=inMinInput, inMaxInput=inMaxInput, inMinOutput=inMinOutput, inMaxOutput=inMaxOutput)
+
+    def TweakWeights(self, inKeywords:str, inRange:float, inLoraRange:float, inMaxOutput:float=None):
+        keywords = []
+        for kw in inKeywords.split(','):
+            kw = kw.lower().strip()
+            if kw!="":
+                keywords.append(kw)
+
+        ln = len(self.p_prompts)
+        for x in range(ln):
+            if self.__match(keywords, self.p_prompts[x]['token']):
+                weight = self.p_prompts[x]['weight'] if 'weight' in self.p_prompts[x] else 1
+                r = inLoraRange if 'lora' in self.p_prompts[x] else inRange
+                self.p_prompts[x]['weight'] = self.__modify_weight(weight, r, inMinOutput=0, inMaxOutput=inMaxOutput)
+
+    def __match(self, inKeywords:list, inString:str):
+        inString = inString.lower()
+        for kw in inKeywords:
+            if kw in inString:
+                return True
+        return False
+
+    def __modify_weight(self, inWeight:float, inRange:float, inMinInput:float=None, inMaxInput:float=None, inMinOutput:float=None, inMaxOutput:float=None):
+        if (inMinInput is not None and inWeight<inMinInput) or (inMaxInput is not None and inWeight>inMaxInput):
+            return inWeight
+
+        random.seed(self.seed)
+        mod = (random.random() * inRange * 2)-inRange
+        if inMinOutput is not None and (inWeight+mod) < inMinOutput:
+            return inWeight
+        if inMaxOutput is not None and (inWeight+mod) > inMaxOutput:
+            return inWeight
+        return inWeight+mod
 
     def ScrambleReduction(self, inTarget:int, inRange:int=None, inKeepTokens:str=None):
         # target is number to eliminiate
