@@ -159,5 +159,5 @@ class Script(scripts.Script):
         self._processed_infotexts += processed.infotexts
 
         processed.images = self._processed_images
-        processed._processed_all_prompts = self._processed_all_prompts
-        processed._processed_infotexts = self._processed_infotexts
+        processed.all_prompts = self._processed_all_prompts
+        processed.infotexts = self._processed_infotexts
