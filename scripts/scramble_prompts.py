@@ -24,8 +24,8 @@ class Script(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        with gr.Group(elem_id="m9-scramble-prompts"):
-            with gr.Accordion("Scramble Prompts [M9]", open=False):
+        with gr.Group(elem_id="m9-scramble-prompts-accordion-group"):
+            with gr.Accordion("Scramble Prompts [M9]", open=False, elem_id="m9-scramble-prompts-accordion"):
                 is_enabled = gr.Checkbox(
                     label="Scramble Prompts enabled",
                     value=False,
