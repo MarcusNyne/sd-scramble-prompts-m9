@@ -35,8 +35,8 @@ function m9_scramble_prompts_update_enabled(event) {
 
 function m9_scramble_prompts_loaded() {
   // alert ('loaded')
-  let m9_scramble_prompts_accordion = document.getElementById("m9-tweak-weights-accordion")
-  let m9_scramble_prompts_enabled = document.getElementById("m9-tweak-weights-enabled")
+  let m9_scramble_prompts_accordion = document.getElementById("m9-scramble-prompts-accordion")
+  let m9_scramble_prompts_enabled = document.getElementById("m9-scramble-prompts-enabled")
 
   if (m9_scramble_prompts_accordion==null || m9_scramble_prompts_enabled==null)
     setTimeout(() => { m9_scramble_prompts_loaded() }, 500);
@@ -49,7 +49,7 @@ function m9_scramble_prompts_loaded() {
       // console.log("span: "+String(span))
       if (span!=null) {
         m9_scramble_prompts_accordion_tag = document.createElement("div");
-        m9_scramble_prompts_accordion_tag.className = 'm9-tweak-weights-tag';
+        m9_scramble_prompts_accordion_tag.className = 'm9-scramble-prompts-tag';
         m9_scramble_prompts_accordion_tag.innerText = 'enabled';
         span.appendChild(m9_scramble_prompts_accordion_tag);
       }
