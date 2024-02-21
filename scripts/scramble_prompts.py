@@ -15,7 +15,8 @@ from scripts.m_prompt import *
 class Script(scripts.Script):
     def __init__(self):
         self.__inside = False
-        pass
+        self._prompt = None
+        self._lastprompt = None
 
     def title(self):
         return "Scramble Prompts [M9]"
@@ -57,12 +58,13 @@ class Script(scripts.Script):
                                 cnt_variations = gr.Slider(label="Variations (count)", info="Number of variations to produce.  (count*batch) images are produced for each variation.", minimum=1, maximum=100, value=1, step=1, elem_id=self.elem_id("cnt_variations"))
                             with gr.Row():
                                 chk_variation_folders = gr.Checkbox(label="Create variation folders", value=False, elem_id=self.elem_id("chk_variation_folders"))
+                                chk_info_textfile = gr.Checkbox(label="Create info text file", value=False, elem_id=self.elem_id("chk_info_textfile"))                                
 
         return [is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
-                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown]
+                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, chk_info_textfile, markdown]
 
     def process(self, p, is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
-                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown):
+                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, chk_info_textfile, markdown):
 
         if not self.__inside and is_enabled:
 
@@ -91,8 +93,11 @@ class Script(scripts.Script):
                         self._processed_all_prompts += processed.all_prompts
                         self._processed_infotexts += processed.infotexts
 
+                        if chk_info_textfile is True:
+                            self.__write_info_file(var_ix, chk_variation_folders, processed.images[0].already_saved_as if len(processed.images)>0 else None)                        
+
                 except:
-                    pass
+                    print("Scramble Prompts [M9]: Exception during processing")
 
             self.__inside = False
             self.__print_variation_header(self._cnt_variations-1)
@@ -105,27 +110,41 @@ class Script(scripts.Script):
     def __print_variation_header(self, in_iteration):
         print(f"Variation {in_iteration+1} of {self._cnt_variations} [{self._outpath_root}].\n")
 
+    def __iter_folder(self, in_iteration):
+        return f"{self._outpath_root}-{in_iteration+1:02d}";
+
     def __calc_outpath(self, in_iteration):
-        return os.path.join (self._original_outpath, f"{self._outpath_root}-{in_iteration+1:02d}")
+        return os.path.join (self._original_outpath, self.__iter_folder(in_iteration))
+
+    def __write_info_file(self, in_iteration, chk_variation_folders, in_image_file):
+        if self._prompt is not None:
+            filepath = None
+            if chk_variation_folders is True:
+                filepath = os.path.join (self.__calc_outpath(in_iteration), self.__iter_folder(in_iteration)+"-info.txt")
+            elif in_image_file is not None:
+                head, tail = os.path.split(in_image_file)
+                filepath = os.path.join (self._original_outpath, os.path.splitext(tail)[0]+"-info.txt")
+            if filepath is not None:
+                self._prompt.SavePrompt(filepath, inLog=True)
 
     def __generate_prompt(self, order_limit, order_variance, reduction_limit, reduction_variance, keep_tokens, \
                     weight_range, weight_max, weight_limit, weight_variance, lora_weight_range):
-        prompt = mPrompt(inSeed=None, inPrompt=self._original_prompt)
-        prompt.ScrambleOrder(inLimit=self.__if_zint(order_limit), inVariance=self.__if_zint(order_variance))
+        self._prompt = mPrompt(inSeed=None, inPrompt=self._original_prompt)
+        self._prompt.ScrambleOrder(inLimit=self.__if_zint(order_limit), inVariance=self.__if_zint(order_variance))
         weight_range=self.__if_zero(weight_range)
         if weight_range is not None:
-            prompt.ScrambleWeights(weight_range, inIsLora=False, inLimit=self.__if_zint(weight_limit), inVariance=self.__if_zint(weight_variance), inMinOutput=0, inMaxOutput=self.__if_zero(weight_max))
+            self._prompt.ScrambleWeights(weight_range, inIsLora=False, inLimit=self.__if_zint(weight_limit), inVariance=self.__if_zint(weight_variance), inMinOutput=0, inMaxOutput=self.__if_zero(weight_max))
         lora_weight_range=self.__if_zero(lora_weight_range)
         if lora_weight_range is not None:
-            prompt.ScrambleWeights(lora_weight_range, inIsLora=True)
+            self._prompt.ScrambleWeights(lora_weight_range, inIsLora=True)
         reduction_limit = self.__if_zint(reduction_limit) 
         if reduction_limit is not None:
-            prompt.ScrambleReduction(inTarget=self.__if_zint(reduction_limit), inRange=self.__if_zint(reduction_variance), inKeepTokens=keep_tokens)
-        new_prompt = prompt.Generate()
+            self._prompt.ScrambleReduction(inTarget=self.__if_zint(reduction_limit), inRange=self.__if_zint(reduction_variance), inKeepTokens=keep_tokens)
+        new_prompt = self._prompt.Generate()
         return new_prompt
 
     def before_process(self, p, is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
-                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown):
+                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, chk_info_textfile, markdown):
 
         if self.__inside or not is_enabled:
             return
@@ -146,10 +165,10 @@ class Script(scripts.Script):
             p.outpath_samples = self.__calc_outpath(self._cnt_variations-1)
         p.prompt = self.__generate_prompt(order_limit, order_variance, reduction_limit, reduction_variance, keep_tokens, \
             weight_range, weight_max, weight_limit, weight_variance, lora_weight_range)
-        pass
+        self._lastprompt = self._prompt
 
     def postprocess(self, p, processed, is_enabled, order_limit, order_variance, reduction_limit, reduction_variance, chk_variation_folders, cnt_variations, keep_tokens, \
-                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, markdown):
+                    weight_range, weight_max, weight_limit, weight_variance, lora_weight_range, chk_info_textfile, markdown):
 
         if self.__inside or not is_enabled:
             return
@@ -158,6 +177,10 @@ class Script(scripts.Script):
         self._processed_all_prompts += processed.all_prompts
         self._processed_infotexts += processed.infotexts
 
+        if chk_info_textfile is True:
+            self._prompt = self._lastprompt
+            self.__write_info_file(self._cnt_variations-1, chk_variation_folders, processed.images[0].already_saved_as if len(processed.images)>0 else None)
+            
         processed.images = self._processed_images
         processed.all_prompts = self._processed_all_prompts
         processed.infotexts = self._processed_infotexts

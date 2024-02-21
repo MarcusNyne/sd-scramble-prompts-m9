@@ -24,13 +24,19 @@ class mPrompt:
 
         return True
 
-    def SavePrompt(self, inFilePath:str) -> None:
+    def SavePrompt(self, inFilePath:str, inLog:bool=False) -> None:
         if type(self.p_output) is not str:
             return False
 
         try:
             f = open(inFilePath, "wt")
             f.write(self.p_output)
+            if inLog is True:
+                f.write("\n\n")
+                for l in self.p_log:
+                    if not l.startswith("="):
+                        f.write("\t")
+                    f.write(l+"\n")
             f.close()
 
         except:
@@ -41,6 +47,7 @@ class mPrompt:
     def Reset(self):
         self.p_string = ""
         self.p_prompts = []
+        self.p_log = []
         self.__reset_generation()
 
     def ScrambleOrder(self, inLimit=None, inVariance:int=None):
@@ -49,12 +56,14 @@ class mPrompt:
         if inLimit is None or inLimit==0:
             random.seed(self.seed)
             random.shuffle(self.p_prompts)
+            self.__log_header("All prompts reordered")
         elif type(inLimit) is int:
             if inVariance is not None:
                 random.seed(self.seed)
                 inLimit += random.randint(0, inVariance*2) - inVariance
                 inLimit = max(inLimit, 0)
 
+            self.__log_header("{} prompts reordered".format(inLimit))
             ln = len(self.p_prompts)
             pmap = list(range(ln))
             while inLimit>0 and ln>1:
@@ -65,10 +74,12 @@ class mPrompt:
                     r1 = random.randrange(0, ln)
                     random.seed(self.seed)
                     r2 = random.randrange(0, ln)
-                a = pmap[r1]
-                pmap[r1]=pmap[r2]
-                pmap[r2] = a
+                pmap = self.__shift(pmap, r1, r2)
                 inLimit-=1
+                if r1<r2:
+                    self.__log_entry(self.p_prompts[r1]['token'], "Moved down by {cnt}".format(cnt=r2-r1))
+                else:
+                    self.__log_entry(self.p_prompts[r1]['token'], "Moved up by {cnt}".format(cnt=r1-r2))
 
             tks = []
             for r in range(ln):
@@ -87,22 +98,27 @@ class mPrompt:
 
         ln = len(pmap)
 
+        target = "prompt" if inIsLora is False else "lora"
         random.seed(self.seed)
         random.shuffle(pmap)
-        if inLimit is not None:
+        if inLimit is None:
+            self.__log_header("All {target} weights changed ({range:0.1f})".format(target=target, range=inRange))
+        else:
             inLimit = min(inLimit, ln)
             if inVariance is not None:
                 random.seed(self.seed)
                 inLimit += random.randint(0, inVariance*2) - inVariance
                 inLimit = max(inLimit, 0)
-
+            self.__log_header("{limit} {target} weights changed ({range:0.1f})".format(target=target, limit=inLimit, range=inRange))
             pmap = pmap[:inLimit]
 
         for p in pmap:
             weight = self.p_prompts[p]['weight'] if 'weight' in self.p_prompts[p] else 1
             self.p_prompts[p]['weight'] = self.__modify_weight(weight, inRange, inMinInput=inMinInput, inMaxInput=inMaxInput, inMinOutput=inMinOutput, inMaxOutput=inMaxOutput)
+            self.__log_entry(self.p_prompts[p]['token'], "Weight changed from {before:0.2f} to {after:0.2f}".format(before=weight, after=self.p_prompts[p]['weight']))
 
     def TweakWeights(self, inKeywords:str, inRange:float, inLoraRange:float, inMaxOutput:float=None):
+        self.__log_header("Weights changed for: {keywords} ({range:0.1f}/{lorarange:0.1f})".format(keywords=inKeywords, range=inRange, lorarange=inLoraRange))
         keywords = []
         for kw in inKeywords.split(','):
             kw = kw.lower().strip()
@@ -115,6 +131,7 @@ class mPrompt:
                 weight = self.p_prompts[x]['weight'] if 'weight' in self.p_prompts[x] else 1
                 r = inLoraRange if 'lora' in self.p_prompts[x] else inRange
                 self.p_prompts[x]['weight'] = self.__modify_weight(weight, r, inMinOutput=0, inMaxOutput=inMaxOutput)
+                self.__log_entry(self.p_prompts[x]['token'], "Weight changed from {before:0.2f} to {after:0.2f}".format(before=weight, after=self.p_prompts[x]['weight']))
 
     def __match(self, inKeywords:list, inString:str):
         inString = inString.lower()
@@ -122,6 +139,26 @@ class mPrompt:
             if kw in inString:
                 return True
         return False
+    
+    # def Shift(self, inList:list, inBefore:int, inAfter:int) -> list:
+    #     return self.__shift(inList, inBefore, inAfter)
+    
+    def __shift(self, inList:list, inBefore:int, inAfter:int) -> list:
+        if inBefore==inAfter:
+            return inList
+        newlist = []
+        if inBefore<inAfter:
+            newlist = inList[:inBefore]
+            newlist += inList[inBefore+1:inAfter+1]
+            newlist += inList[inBefore:inBefore+1]
+            newlist += inList[inAfter+1:]
+        else:
+            newlist = inList[:inAfter]
+            newlist += inList[inBefore:inBefore+1]
+            newlist += inList[inAfter:inBefore]
+            newlist += inList[inBefore+1:]
+
+        return newlist
 
     def __modify_weight(self, inWeight:float, inRange:float, inMinInput:float=None, inMaxInput:float=None, inMinOutput:float=None, inMaxOutput:float=None):
         if (inMinInput is not None and inWeight<inMinInput) or (inMaxInput is not None and inWeight>inMaxInput):
@@ -134,6 +171,12 @@ class mPrompt:
         if inMaxOutput is not None and (inWeight+mod) > inMaxOutput:
             return inWeight
         return inWeight+mod
+    
+    def __log_header(self, inHeader):
+            self.p_log.append("= {header}".format(header=inHeader))
+
+    def __log_entry(self, inPrompt, inEntry):
+        self.p_log.append("{prompt}: {entry}".format(prompt=inPrompt, entry=inEntry))
 
     def ScrambleReduction(self, inTarget:int, inRange:int=None, inKeepTokens:str=None):
         # target is number to eliminiate
@@ -165,6 +208,8 @@ class mPrompt:
             inTarget += random.randint(1, inRange*2) - inRange
         inTarget = min(max(inTarget, 1), len(pmap)-1)
 
+        self.__log_header("{target} prompts reduced".format(target=inTarget))
+
         pmap = pmap[:inTarget]
 
         tks = []
@@ -177,6 +222,8 @@ class mPrompt:
                         break
             if keep or x not in pmap:
                 tks.append(self.p_prompts[x])
+            else:
+                self.__log_entry(self.p_prompts[x]['token'], "Removed")
 
         self.p_prompts = tks
 
