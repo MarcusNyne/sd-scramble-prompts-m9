@@ -130,16 +130,16 @@ class Script(scripts.Script):
         cnt_prompts = self._prompt.CountTokens('prompt')
         if cnt_prompts>0:
             if order_limit>0:
-                self._prompt.ScrambleOrder(inLimit=int(self.__if_zint(order_limit)/float(cnt_prompts)) if order_limit<100 else None)
+                self._prompt.ScrambleOrder(inLimit=int((self.__if_zint(order_limit)*cnt_prompts)/100) if order_limit<100 else None)
             weight_range=self.__if_zfloat(weight_range)
             if weight_limit is not None and weight_limit>0 and weight_range is not None and weight_range>0:
-                self._prompt.ScrambleWeights(weight_range, inIsLora=False, inLimit=int(self.__if_zint(weight_limit)/float(cnt_prompts)), inMinOutput=0, inMaxOutput=self.__if_zfloat(weight_max))
+                self._prompt.ScrambleWeights(weight_range, inIsLora=False, inLimit=int((self.__if_zint(weight_limit)*cnt_prompts)/100), inMinOutput=0, inMaxOutput=self.__if_zfloat(weight_max))
             lora_weight_range=self.__if_zfloat(lora_weight_range)
             if lora_weight_range is not None and lora_weight_range>0:
                 self._prompt.ScrambleWeights(lora_weight_range, inIsLora=True)
             reduction_limit = self.__if_zint(reduction_limit) 
             if reduction_limit is not None and reduction_limit>0:
-                self._prompt.ScrambleReduction(inTarget=int(self.__if_zint(reduction_limit)/float(cnt_prompts)), inKeepTokens=keep_tokens)
+                self._prompt.ScrambleReduction(inTarget=int((self.__if_zint(reduction_limit)*cnt_prompts)/100), inKeepTokens=keep_tokens)
         new_prompt = self._prompt.Generate()
         return new_prompt
 
