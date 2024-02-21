@@ -11,6 +11,22 @@ class mPrompt:
         if inPrompt is not None:
             self.__init_prompt(inPrompt)
 
+    def CountTokens(self, inCategory:str=None):
+        if inCategory is None:
+            return len(self.p_prompts)
+        
+        cnt = 0
+        for p in self.p_prompts:
+            match inCategory:
+                case 'prompt':
+                    if 'lora' not in p:
+                        cnt += 1
+                case 'lora':
+                    if 'lora' in p:
+                        cnt += 1
+
+        return cnt
+
     def LoadPrompt(self, inFilePath:str) -> None:
         self.Reset()
         try:
@@ -53,7 +69,9 @@ class mPrompt:
     def ScrambleOrder(self, inLimit=None, inVariance:int=None):
         # limit None scrambles the entire list
         # if limit is specified, only a limited number are reordered
-        if inLimit is None or inLimit==0:
+        if inLimit==0:
+            return
+        if inLimit is None:
             random.seed(self.seed)
             random.shuffle(self.p_prompts)
             self.__log_header("All prompts reordered")
@@ -63,30 +81,51 @@ class mPrompt:
                 inLimit += random.randint(0, inVariance*2) - inVariance
                 inLimit = max(inLimit, 0)
 
-            self.__log_header("{} prompts reordered".format(inLimit))
             ln = len(self.p_prompts)
             pmap = list(range(ln))
-            while inLimit>0 and ln>1:
+            reordered = []
+            while inLimit>0 and len(reordered)<ln:
                 r1=0
                 r2=0
-                while r1==r2:
+                try_cnt = 0
+                while try_cnt<ln*3 and (r1==r2 or pmap[r1] in reordered):
                     random.seed(self.seed)
                     r1 = random.randrange(0, ln)
                     random.seed(self.seed)
                     r2 = random.randrange(0, ln)
-                pmap = self.__shift(pmap, r1, r2)
-                inLimit-=1
-                if r1<r2:
-                    self.__log_entry(self.p_prompts[r1]['token'], "Moved down by {cnt}".format(cnt=r2-r1))
-                else:
-                    self.__log_entry(self.p_prompts[r1]['token'], "Moved up by {cnt}".format(cnt=r1-r2))
+                    try_cnt += 1
+                if try_cnt>=ln*3:
+                    break
 
-            tks = []
-            for r in range(ln):
-                tks.append(self.p_prompts[pmap[r]])
-            self.p_prompts = tks
+                reordered.append(pmap[r1])
+
+                pmap = self.__shift(pmap, r1, r2)
+                inLimit -= 1
+
+            cnt = 0
+            for r in range(len(pmap)):
+                if pmap[r] in reordered and pmap[r]!=r:
+                    cnt += 1
+
+            if cnt>0:
+                self.__log_header("{} prompts reordered".format(cnt))
+
+                for r in range(len(pmap)):
+                    if pmap[r] in reordered and pmap[r]!=r:
+                        if r<pmap[r]:
+                            self.__log_entry(self.p_prompts[r]['token'], "Moved up by {cnt}".format(cnt=pmap[r]-r))
+                        else:
+                            self.__log_entry(self.p_prompts[r]['token'], "Moved down by {cnt}".format(cnt=r-pmap[r]))
+
+                tks = []
+                for r in range(ln):
+                    tks.append(self.p_prompts[pmap[r]])
+                self.p_prompts = tks
 
     def ScrambleWeights(self, inRange:float, inIsLora=False, inLimit=None, inVariance=None, inMinInput:float=None, inMaxInput:float=None, inMinOutput:float=None, inMaxOutput:float=None):
+        if inLimit is None:
+            return
+        
         ln = len(self.p_prompts)
 
         pmap = []
@@ -97,6 +136,8 @@ class mPrompt:
                 pmap.append(x)
 
         ln = len(pmap)
+        if ln==0:
+            return
 
         target = "prompt" if inIsLora is False else "lora"
         random.seed(self.seed)
@@ -208,9 +249,9 @@ class mPrompt:
             inTarget += random.randint(1, inRange*2) - inRange
         inTarget = min(max(inTarget, 1), len(pmap)-1)
 
-        self.__log_header("{target} prompts reduced".format(target=inTarget))
-
         pmap = pmap[:inTarget]
+
+        removed = []
 
         tks = []
         for x in range(ln):
@@ -223,7 +264,12 @@ class mPrompt:
             if keep or x not in pmap:
                 tks.append(self.p_prompts[x])
             else:
-                self.__log_entry(self.p_prompts[x]['token'], "Removed")
+                removed.append(self.p_prompts[x]['token'])
+
+        if len(removed)>0:
+            self.__log_header("{target} prompts removed".format(target=len(removed)))
+            for p in removed:
+                self.__log_entry(p, "Removed")
 
         self.p_prompts = tks
 
