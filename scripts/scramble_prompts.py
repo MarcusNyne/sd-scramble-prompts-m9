@@ -44,7 +44,7 @@ class Script(scripts.Script):
                             with gr.Row():
                                 reduction_limit = gr.Slider(label="Remove Prompts", info="Percent of prompts to remove", minimum=0, maximum=30, value=0, step=5, elem_id=self.elem_id("reduction_limit"))
                             with gr.Row():
-                                keep_tokens = gr.Textbox(label="Keep Tokens (,)", info="Prompts with these keywords will not be removed", lines=1, elem_id=self.elem_id("keep_tokens"))
+                                keep_tokens = gr.Textbox(label="Keep Prompts (,)", info="Prompts with these keywords will not be removed", lines=1, elem_id=self.elem_id("keep_tokens"))
                             with gr.Row():
                                 weight_limit = gr.Slider(label="Modify Weights", info="Percent of prompts to modify weights", minimum=0, maximum=100, value=20, step=5, elem_id=self.elem_id("weight_limit"))
                             with gr.Row():
