@@ -61,12 +61,12 @@ The same seed values will be used for each variation, regardless if it is random
      * Contains the final prompt
      * Contains a log of changes to the prompt, so you can see what changed
 
-### Help and Feedback
+## Help and Feedback
 
    * **Discord Server**
      * https://discord.gg/trMfHcTcsG
 
-### m9 Prompts Catalog
+## m9 Prompts Catalog
 
    * **Scramble Prompts for Stable Diffusion**
      * Works with Automatic1111
@@ -82,4 +82,3 @@ The same seed values will be used for each variation, regardless if it is random
      * Works with ComfyUI
      * Includes nodes for Scramble Prompts and Tweak Weights
      * https://github.com/MarcusNyne/m9-prompts-comfyui
-
