@@ -5,6 +5,11 @@ from datetime import datetime
 from modules.processing import fix_seed
 import modules.scripts as scripts
 import gradio as gr
+from modules.shared import opts
+if hasattr(opts, 'hypertile_enable_unet'):  # webui >= 1.7
+    from modules.ui_components import InputAccordion
+else:
+    InputAccordion = None
 
 from modules import images
 from modules.processing import Processed, process_images
@@ -25,37 +30,41 @@ class Script(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        with gr.Group(elem_id="m9-scramble-prompts-accordion-group"):
-            with gr.Accordion("Scramble Prompts [M9]", open=False, elem_id="m9-scramble-prompts-accordion"):
-                is_enabled = gr.Checkbox(
-                    label="Scramble Prompts enabled",
-                    value=False,
-                    interactive=True,
-                    elem_id="m9-scramble-prompts-enabled",
-                )
+        tab = 't2i'  if not is_img2img else 'i2i'
+        m9_label = 'Scramble Prompts [M9]'
+        m9_accordian = "m9-scramble-prompts-accordion"
+        m9_enabled = "m9-scramble-prompts-enabled"
+        with (
+            InputAccordion(False, label=m9_label, elem_id=f'{m9_accordian}-{tab}') if InputAccordion
+            else gr.Accordion(m9_label, open=False, elem_id=f'{m9_accordian}-{tab}')
+            as is_enabled
+        ):
+            if not InputAccordion:
+                with gr.Row(variant='compact'):
+                    is_enabled = gr.Checkbox(label='Enable Scramble Prompts', value=False, interactive=True, elem_id=f'{m9_enabled}-{tab}')
 
-                with gr.Group(visible=True):
-                    with gr.Row():
-                        with gr.Column(scale=19):
-                            with gr.Row():
-                                markdown = gr.Markdown("Scrambles a prompt by changing prompt order, removing prompts, and changing prompt weights.  The entire (count*batch) will be run against a prompt variation before running the next one.")
-                            with gr.Row():
-                                order_limit = gr.Slider(label="Order Prompts", info="Percent of prompts to reorder", minimum=0, maximum=100, value=20, step=5, elem_id=self.elem_id("order_limit"))
-                            with gr.Row():
-                                reduction_limit = gr.Slider(label="Remove Prompts", info="Percent of prompts to remove", minimum=0, maximum=30, value=0, step=5, elem_id=self.elem_id("reduction_limit"))
-                            with gr.Row():
-                                keep_tokens = gr.Textbox(label="Keep Prompts (,)", info="Prompts with these keywords will not be removed", lines=1, elem_id=self.elem_id("keep_tokens"))
-                            with gr.Row():
-                                weight_limit = gr.Slider(label="Modify Weights", info="Percent of prompts to modify weights", minimum=0, maximum=100, value=20, step=5, elem_id=self.elem_id("weight_limit"))
-                            with gr.Row():
-                                weight_range = gr.Number(label="Weight Range (+/-)", value=0.5, step=0.1, minimum=0, elem_id=self.elem_id("weight_range"))
-                                weight_max = gr.Number(label="Max Weight", value=1.9, step=0.1, minimum=0, elem_id=self.elem_id("weight_max"))
-                                lora_weight_range = gr.Number(label="Lora Weight Range (+/-)", value=0.2, minimum=0, step=0.1, elem_id=self.elem_id("lora_weight_range"))
-                            with gr.Row():
-                                cnt_variations = gr.Slider(label="Variations (count)", info="Number of prompt variations to produce", minimum=1, maximum=100, value=1, step=1, elem_id=self.elem_id("cnt_variations"))
-                            with gr.Row():
-                                chk_variation_folders = gr.Checkbox(label="Create variation folders", value=False, elem_id=self.elem_id("chk_variation_folders"))
-                                chk_info_textfile = gr.Checkbox(label="Create info text file", value=False, elem_id=self.elem_id("chk_info_textfile"))                                
+            with gr.Group(visible=True):
+                with gr.Row():
+                    with gr.Column(scale=19):
+                        with gr.Row():
+                            markdown = gr.Markdown("Scrambles a prompt by changing prompt order, removing prompts, and changing prompt weights.  The entire (count*batch) will be run against a prompt variation before running the next one.")
+                        with gr.Row():
+                            order_limit = gr.Slider(label="Order Prompts", info="Percent of prompts to reorder", minimum=0, maximum=100, value=20, step=5, elem_id=self.elem_id("order_limit"))
+                        with gr.Row():
+                            reduction_limit = gr.Slider(label="Remove Prompts", info="Percent of prompts to remove", minimum=0, maximum=30, value=0, step=5, elem_id=self.elem_id("reduction_limit"))
+                        with gr.Row():
+                            keep_tokens = gr.Textbox(label="Keep Prompts (,)", info="Prompts with these keywords will not be removed", lines=1, elem_id=self.elem_id("keep_tokens"))
+                        with gr.Row():
+                            weight_limit = gr.Slider(label="Modify Weights", info="Percent of prompts to modify weights", minimum=0, maximum=100, value=20, step=5, elem_id=self.elem_id("weight_limit"))
+                        with gr.Row():
+                            weight_range = gr.Number(label="Weight Range (+/-)", value=0.5, step=0.1, minimum=0, elem_id=self.elem_id("weight_range"))
+                            weight_max = gr.Number(label="Max Weight", value=1.9, step=0.1, minimum=0, elem_id=self.elem_id("weight_max"))
+                            lora_weight_range = gr.Number(label="Lora Weight Range (+/-)", value=0.2, minimum=0, step=0.1, elem_id=self.elem_id("lora_weight_range"))
+                        with gr.Row():
+                            cnt_variations = gr.Slider(label="Variations (count)", info="Number of prompt variations to produce", minimum=1, maximum=100, value=1, step=1, elem_id=self.elem_id("cnt_variations"))
+                        with gr.Row():
+                            chk_variation_folders = gr.Checkbox(label="Create variation folders", value=False, elem_id=self.elem_id("chk_variation_folders"))
+                            chk_info_textfile = gr.Checkbox(label="Create info text file", value=False, elem_id=self.elem_id("chk_info_textfile"))                                
 
         return [is_enabled, order_limit, reduction_limit, chk_variation_folders, cnt_variations, keep_tokens, \
                     weight_range, weight_max, weight_limit, lora_weight_range, chk_info_textfile, markdown]

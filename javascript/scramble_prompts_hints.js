@@ -1,6 +1,6 @@
 titles = {
   ...titles,
-  "Scramble Prompts enabled": "Disable Scamble Prompts by unchecking this box",
+  "Enable Scramble Prompts": "Disable Scamble Prompts by unchecking this box",
   "Order Prompts": "Number of prompts to be reordered",
   "Remove Prompts": "Removes this number of prompts",
   "Keep Prompts (,)": "Prompts with these keywords will not be removed.  Comma delimited",
