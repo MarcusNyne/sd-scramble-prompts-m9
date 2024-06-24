@@ -92,7 +92,8 @@ class Script(scripts.Script):
                         if p.prompt==p.hr_prompt:
                             copy_p.hr_prompt = ''
                         if chk_variation_folders is True:
-                            copy_p.outpath_samples = self.__calc_outpath(var_ix)
+                            opts.data['directories_filename_pattern'] = self.__calc_dirpattern(chk_variation_folders, var_ix)
+
                         processed = process_images(copy_p)
 
                         self._processed_images += processed.images
@@ -107,6 +108,8 @@ class Script(scripts.Script):
 
             self.__inside = False
             self.__print_variation_header(self._cnt_variations-1)
+            if chk_variation_folders is True:
+                opts.data['directories_filename_pattern'] = self.__calc_dirpattern(chk_variation_folders, self._cnt_variations-1)
 
     def __if_zint(self, inValue):
         return None if (inValue is None or inValue==0.0) else int(inValue)
@@ -117,21 +120,34 @@ class Script(scripts.Script):
         print(f"Variation {in_iteration+1} of {self._cnt_variations} [{self._outpath_root}].\n")
 
     def __iter_folder(self, in_iteration):
-        return f"{self._outpath_root}-{in_iteration+1:02d}";
+        return f"{self._outpath_root}-{in_iteration+1:02d}"
 
-    def __calc_outpath(self, in_iteration):
-        return os.path.join (self._original_outpath, self.__iter_folder(in_iteration))
+    def __is_none(self, in_pattern):
+        if type(in_pattern) is not str:
+            return True
+        in_pattern = in_pattern.lstrip().rstrip('\\ /').lower()
+        return in_pattern == '' or in_pattern == '[none]'
+
+    def __calc_dirpattern(self, chk_variation_folders, in_iteration):
+        if chk_variation_folders is False:
+            return self._original_dirpattern
+        elif self.__is_none(self._original_dirpattern):
+            return self.__iter_folder(in_iteration)
+        return os.path.join(self._original_dirpattern, self.__iter_folder(in_iteration))
 
     def __write_info_file(self, in_iteration, chk_variation_folders, in_image_file):
-        if self._prompt is not None:
-            filepath = None
-            if chk_variation_folders is True:
-                filepath = os.path.join (self.__calc_outpath(in_iteration), self.__iter_folder(in_iteration)+"-info.txt")
-            elif in_image_file is not None:
-                head, tail = os.path.split(in_image_file)
-                filepath = os.path.join (self._original_outpath, os.path.splitext(tail)[0]+"-info.txt")
-            if filepath is not None:
+        filepath = None
+        try:
+            if self._prompt and in_image_file:
+                if chk_variation_folders is True:
+                    filename = self.__iter_folder(in_iteration)+"-info.txt"
+                else:
+                    filename = os.path.basename(in_image_file)+"-info.txt"
+
+                filepath = os.path.join(os.path.dirname(in_image_file), filename)
                 self._prompt.SavePrompt(filepath, inLog=True)
+        except:
+            print(f"Failed to write info text file: {filepath}")
 
     def __generate_prompt(self, order_limit, reduction_limit, keep_tokens, \
                     weight_range, weight_max, weight_limit, lora_weight_range):
@@ -165,13 +181,14 @@ class Script(scripts.Script):
         self._original_seed = p.seed
         self._original_prompt = p.prompt
         self._original_outpath = p.outpath_samples
+        self._original_dirpattern = opts.data['directories_filename_pattern']
         self._processed_images = []
         self._processed_all_prompts = []
         self._processed_infotexts = []
         state.job_count = self._cnt_variations * p.n_iter
 
         if chk_variation_folders is True:
-            p.outpath_samples = self.__calc_outpath(self._cnt_variations-1)
+            opts.data['directories_filename_pattern'] = self.__calc_dirpattern(chk_variation_folders, self._cnt_variations-1)
         p.prompt = self.__generate_prompt(order_limit, reduction_limit, keep_tokens, \
             weight_range, weight_max, weight_limit, lora_weight_range)
         self._lastprompt = self._prompt
@@ -193,3 +210,6 @@ class Script(scripts.Script):
         processed.images = self._processed_images
         processed.all_prompts = self._processed_all_prompts
         processed.infotexts = self._processed_infotexts
+
+        if chk_variation_folders is True:
+            opts.data['directories_filename_pattern'] = self._original_dirpattern
