@@ -89,7 +89,7 @@ class Script(scripts.Script):
 
                         copy_p = copy.copy(p)
                         copy_p.prompt = new_prompt
-                        if p.prompt==p.hr_prompt:
+                        if hasattr(p, 'hr_prompt') and p.prompt==p.hr_prompt:
                             copy_p.hr_prompt = ''
                         if chk_variation_folders is True:
                             opts.data['directories_filename_pattern'] = self.__calc_dirpattern(chk_variation_folders, var_ix)
