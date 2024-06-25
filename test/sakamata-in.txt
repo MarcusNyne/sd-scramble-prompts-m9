@@ -1,5 +1,5 @@
-beautiful woman:1.123, <lora:Chloe Lolita:.7> sakamata chloe, grey hair,
-black hair, heart on chest, breasts, <lora:more_details:.7> red eyes, asian, ,ashes to ashes,
+beautiful woman:1.123, <lora:chloe_lora-last:0.8> sakamata chloe, grey hair,
+black hair, heart on chest, <lora:more_details:.7> red eyes, asian, ,ashes to ashes,
  (((dark presence))), , smoke, thick broad brush strokes, dark ink,
   epic lighting digital painting, sharp focus, octane render, 8 k, hyper detailed.,
 beautiful woman, Black ink flow, 8k resolution,

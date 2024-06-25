@@ -1,4 +1,4 @@
-beautiful woman:1.52,<lora:Chloe Lolita:0.946>,beautiful woman:1.4,octane render:0.6,asian:0.661,breasts:1.36
+beautiful woman:1.52,<lora:chloe_lora-last:0.946>,beautiful woman:1.4,octane render:0.6,asian:0.661,
 sakamata chloe:1.42,fantastical:0.573,concept art:0.619,ashes to ashes:0.782,sharp focus:1.39,Black ink flow:0.554
 thick broad brush strokes:0.98,dark ink:1.06,complex:0.774,intricately detailed:0.569,photorealistic masterpiece:1.48
 professional photography:1.44,hyper detailed.:1.27,intricately detailed fluid gouache painting:1.08,waves:0.762
