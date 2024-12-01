@@ -127,13 +127,18 @@ class Script(scripts.Script):
             return True
         in_pattern = in_pattern.lstrip().rstrip('\\ /').lower()
         return in_pattern == '' or in_pattern == '[none]'
+    
+    def __safe_join(self, in_path, in_folder):
+        if in_path is None:
+            return in_folder
+        return os.path.join(in_path, in_folder)
 
     def __calc_dirpattern(self, chk_variation_folders, in_iteration):
         if chk_variation_folders is False:
-            return self._original_dirpattern
+            return self._original_dirpattern if self._original_dirpattern is not None else ''
         elif self.__is_none(self._original_dirpattern):
             return self.__iter_folder(in_iteration)
-        return os.path.join(self._original_dirpattern, self.__iter_folder(in_iteration))
+        return self.__safe_join(self._original_dirpattern, self.__iter_folder(in_iteration))
 
     def __write_info_file(self, in_iteration, chk_variation_folders, in_image_file):
         filepath = None
@@ -181,7 +186,7 @@ class Script(scripts.Script):
         self._original_seed = p.seed
         self._original_prompt = p.prompt
         self._original_outpath = p.outpath_samples
-        self._original_dirpattern = opts.data['directories_filename_pattern']
+        self._original_dirpattern = opts.data['directories_filename_pattern'] if 'directories_filename_pattern' in opts.data else None
         self._processed_images = []
         self._processed_all_prompts = []
         self._processed_infotexts = []
@@ -212,4 +217,7 @@ class Script(scripts.Script):
         processed.infotexts = self._processed_infotexts
 
         if chk_variation_folders is True:
-            opts.data['directories_filename_pattern'] = self._original_dirpattern
+            if self._original_dirpattern is None:
+                del opts.data['directories_filename_pattern']
+            else:
+                opts.data['directories_filename_pattern'] = self._original_dirpattern
